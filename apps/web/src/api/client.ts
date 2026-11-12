@@ -1,6 +1,10 @@
 import { Case, CaseSummary, Attempt, EvidenceItem, SafeAction } from './types';
 
-const API_BASE = '/api/v1';
+const RAW_API_URL = (import.meta.env.VITE_API_URL as string) || '';
+const BASE_HOST = RAW_API_URL
+  ? (RAW_API_URL.startsWith('http') ? RAW_API_URL : `https://${RAW_API_URL}`).replace(/\/$/, '')
+  : '';
+const API_BASE = BASE_HOST ? `${BASE_HOST}/api/v1` : '/api/v1';
 
 // Initial Seeded Demo Cases
 export const SEEDED_CASES: Case[] = [
@@ -169,7 +173,8 @@ class ApiService {
 
   async checkBackendLiveness(): Promise<boolean> {
     try {
-      const res = await fetch('/healthz', { signal: AbortSignal.timeout(1500) });
+      const healthUrl = BASE_HOST ? `${BASE_HOST}/healthz` : '/healthz';
+      const res = await fetch(healthUrl, { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
         this.useSimulation = false;
         return true;

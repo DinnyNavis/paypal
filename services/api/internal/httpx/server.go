@@ -119,6 +119,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("X-Request-ID", reqID)
 	w.Header().Set("X-Correlation-ID", reqID)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID, X-Correlation-ID, Idempotency-Key")
+
+	if req.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	ctx := context.WithValue(req.Context(), RequestIDKey, reqID)
 	reqWithContext := req.WithContext(ctx)
