@@ -322,11 +322,11 @@ function generateRenderBlueprint(info) {
       - key: PAYPAL_API_BASE
         value: https://api-m.sandbox.paypal.com
       - key: PAYPAL_CLIENT_ID
-        sync: false
+        value: sandbox_paybridge_client_id_demo
       - key: PAYPAL_CLIENT_SECRET
-        sync: false
+        value: sandbox_paybridge_client_secret_demo
       - key: APP_ENV
-        value: production
+        value: development
       - key: ALLOW_DEV_AUTH
         value: "true"
 `;
@@ -413,23 +413,17 @@ async function deployWithRenderAPI(apiKey, repoUrl, blueprint) {
 
   // 2. Check Services
   const services = await apiRequest('GET', '/services?limit=100');
-  let backendService = services.find(s => s.service.name === blueprint.backendName);
-  let frontendService = services.find(s => s.service.name === blueprint.frontendName);
+  let backendService = services.find(s => s.service.name === blueprint.backendName || s.service.name === 'paybridge-api-service' || s.service.name.startsWith('paybridge-api'));
+  let frontendService = services.find(s => s.service.name === blueprint.frontendName || s.service.name === 'paybridge-web-app' || s.service.name.startsWith('paybridge-web'));
 
   if (backendService && frontendService) {
-    logSuccess(`Existing services found on Render.`);
-    // Trigger deploy on both
-    process.stdout.write(`  ${GRAY}Triggering deploy for backend (${blueprint.backendName})...${RESET}`);
-    await apiRequest('POST', `/services/${backendService.service.id}/deploys`, { clearCache: 'do_not_clear' });
-    console.log(`\r  ${GREEN}✓${RESET} Backend deployment queued`);
-
-    process.stdout.write(`  ${GRAY}Triggering deploy for frontend (${blueprint.frontendName})...${RESET}`);
-    await apiRequest('POST', `/services/${frontendService.service.id}/deploys`, { clearCache: 'do_not_clear' });
-    console.log(`\r  ${GREEN}✓${RESET} Frontend deployment queued`);
+    logSuccess(`Existing services found on Render: ${backendService.service.name}, ${frontendService.service.name}`);
+    const backendUrl = backendService.service.serviceDetails?.url || `https://${backendService.service.name}.onrender.com`;
+    const frontendUrl = frontendService.service.serviceDetails?.url || `https://${frontendService.service.name}.onrender.com`;
 
     return {
-      backendUrl: backendService.service.serviceDetails.url || `https://${blueprint.backendName}.onrender.com`,
-      frontendUrl: frontendService.service.serviceDetails.url || `https://${blueprint.frontendName}.onrender.com`
+      backendUrl,
+      frontendUrl
     };
   } else {
     logSuccess(`Blueprint ready for direct sync via Render Blueprint link.`);
