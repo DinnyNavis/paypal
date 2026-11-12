@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lab. Post-train your own self improving agents — Atlas Cognition</title>
+  
+  <!-- Typography: Newsreader, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================================
+       RESET & ROOT VARIABLES
+       ========================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-page: #0C0D0E;
+      --card-bg-start: #191B1C;
+      --card-bg-end: #121314;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(255, 255, 255, 0.18);
+      
+      --panel-bg: #090A0B;
+      --panel-border: rgba(255, 255, 255, 0.06);
+
+      --ink: #FFFFFF;
+      --body-text: rgba(255, 255, 255, 0.62);
+      --body-muted: rgba(255, 255, 255, 0.38);
+
+      --font-serif: 'Newsreader', serif;
+      --font-sans: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html {
+      background-color: var(--bg-page);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--bg-page);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 72px 24px 100px;
+    }
+
+    /* =========================================================================
+       HERO HEADLINE & BUTTONS (Identical to reference screenshot)
+       ========================================================================= */
+    .hero-wrap {
+      width: 100%;
+      max-width: 900px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 56px;
+    }
+
+    .hero-headline {
+      font-family: var(--font-serif);
+      font-size: clamp(38px, 4.4vw, 56px);
+      line-height: 1.15;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 24px;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      font-family: var(--font-serif);
+      font-weight: 400;
+      color: #FFFFFF;
+      margin-right: 4px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* Small Mono Pill Buttons */
+    .pill-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      height: 35px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 9999px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .pill-btn-white {
+      background-color: #FFFFFF;
+      color: #0C0D0E;
+      border: 1px solid #FFFFFF;
+    }
+
+    .pill-btn-white:hover {
+      background-color: #E8E8E8;
+      border-color: #E8E8E8;
+    }
+
+    .pill-btn-dark {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .pill-btn-dark:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    /* =========================================================================
+       BENTO GRID STAGE
+       ========================================================================= */
+    .bento-stage {
+      width: 100%;
+      max-width: 1164px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      width: 100%;
+    }
+
+    @media (min-width: 1164px) {
+      .bento-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .card-full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    /* Card Shell */
+    .card {
+      position: relative;
+      background: linear-gradient(145deg, var(--card-bg-start) 0%, var(--card-bg-end) 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 340px;
+      height: 260px;
+      background: radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Desktop Bento Structure (>= 1164px) */
+    @media (min-width: 1164px) {
+      /* Card 1: Environments -> Panel on LEFT, Copy on RIGHT */
+      .card-environments {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 24px;
+        align-items: center;
+      }
+
+      .card-environments .card-panel {
+        order: 1;
+        min-height: 340px;
+      }
+
+      .card-environments .card-content {
+        order: 2;
+        padding-left: 12px;
+      }
+
+      /* Card 2 & 3: Side by Side -> Panel on TOP, Copy on BOTTOM */
+      .card-split {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .card-split .card-panel {
+        height: 270px;
+      }
+
+      /* Card 4: Inference -> Mirrored! Copy on LEFT, Panel on RIGHT */
+      .card-inference {
+        display: grid;
+        grid-template-columns: 0.85fr 1.15fr;
+        gap: 24px;
+        align-items: center;
+      }
+
+      .card-inference .card-content {
+        order: 1;
+        padding-right: 12px;
+      }
+
+      .card-inference .card-panel {
+        order: 2;
+        min-height: 340px;
+      }
+    }
+
+    /* Narrower Screen Fallback (< 1164px) */
+    @media (max-width: 1163px) {
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .card-panel {
+        order: 1 !important;
+        height: 280px;
+      }
+
+      .card-content {
+        order: 2 !important;
+      }
+    }
+
+    /* =========================================================================
+       INSET SOFTLY LIT PANELS (Reference Inset Styling)
+       ========================================================================= */
+    .card-panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .panel-highlight {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 45% 45%, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .panel-grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+
+    /* =========================================================================
+       CARD CONTENT & TYPOGRAPHY
+       ========================================================================= */
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-title {
+      font-family: var(--font-serif);
+      font-size: 30px;
+      line-height: 1.15;
+      font-weight: 300;
+      letter-spacing: -0.015em;
+      color: var(--ink);
+      margin-bottom: 14px;
+    }
+
+    .card-title em {
+      font-style: italic;
+      font-family: var(--font-serif);
+      font-weight: 400;
+      color: #FFFFFF;
+      margin-right: 2px;
+    }
+
+    .card-paragraph {
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--body-text);
+      margin-bottom: 24px;
+      max-width: 440px;
+    }
+
+    .mono-bold-num {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-right: 2px;
+    }
+
+    .card-action-wrap {
+      margin-top: 4px;
+    }
+
+    /* =========================================================================
+       PANEL 1: RL ENVIRONMENTS (Diamond Loop with Concentric Circles)
+       ========================================================================= */
+    .env-diagram-container {
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .env-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+
+    .env-node-label {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      fill: #FFFFFF;
+      letter-spacing: 0.08em;
+    }
+
+    .env-caption {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      fill: rgba(255, 255, 255, 0.42);
+      letter-spacing: 0.04em;
+    }
+
+    /* =========================================================================
+       PANEL 2: EVALUATIONS (Picker + White Evaluate Bar + Benchmark List)
+       ========================================================================= */
+    .eval-box {
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .eval-picker-row {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #FFFFFF;
+    }
+
+    .eval-pill-bar {
+      background: #FFFFFF;
+      color: #0C0D0E;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      border-radius: 9999px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.18s ease;
+    }
+
+    .eval-pill-bar:hover {
+      background: #E5E5E5;
+    }
+
+    .eval-faint-row {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* =========================================================================
+       PANEL 3: HOSTED TRAINING (Reward Graph with 0.92 Max)
+       ========================================================================= */
+    .training-box {
+      width: 100%;
+      max-width: 370px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .training-header-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.45);
+      margin-bottom: 6px;
+    }
+
+    .training-chart-svg {
+      width: 100%;
+      height: 140px;
+      display: block;
+      overflow: visible;
+    }
+
+    .training-bottom-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 4px;
+    }
+
+    /* =========================================================================
+       PANEL 4: INFERENCE (Stacked Clusters with LoRA Badges)
+       ========================================================================= */
+    .inference-box {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .inf-row {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .inf-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .inf-name {
+      font-weight: 600;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .inf-badge {
+      font-size: 9.5px;
+      color: #A78BFA;
+      background: rgba(167, 139, 250, 0.12);
+      border: 1px solid rgba(167, 139, 250, 0.28);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .inf-desc {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .inf-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .inf-latency {
+      color: #10B981;
+      font-weight: 600;
+    }
+
+    .inf-status {
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    /* =========================================================================
+       HOVER & ENTRANCE ANIMATIONS
+       ========================================================================= */
+    @media (hover: hover) {
+      .card:hover {
+        border-color: var(--card-border-hover);
+      }
+    }
+
+    .anim-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .anim-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stroke-draw {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      transition: stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+    }
+
+    .card.visible .stroke-draw {
+      stroke-dashoffset: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Clean Centered Hero matching reference screenshot -->
+  <section class="hero-wrap">
+    <h1 class="hero-headline anim-in">
+      <em>Lab.</em> Post-train your own self<br>improving agents
+    </h1>
+
+    <div class="hero-actions anim-in">
+      <a href="#training" class="pill-btn pill-btn-white">
+        START TRAINING →
+      </a>
+      <a href="#demo" class="pill-btn pill-btn-dark">
+        BOOK A DEMO
+      </a>
+    </div>
+  </section>
+
+  <!-- Bento Stage -->
+  <main class="bento-stage">
+    <div class="bento-grid">
+
+      <!-- =====================================================================
+           CARD 1: RL Environments (Full-width row, panel LEFT, copy RIGHT)
+           ===================================================================== -->
+      <article class="card card-full-width card-environments anim-in" id="environments">
+        
+        <!-- Panel LEFT: Inset diamond loop with concentric background rings -->
+        <div class="card-panel">
+          <div class="panel-highlight"></div>
+          <div class="panel-grid-lines"></div>
+
+          <div class="env-diagram-container">
+            <svg class="env-svg" viewBox="0 0 440 260" fill="none">
+              <!-- Concentric faint guide rings behind diamond -->
+              <circle cx="220" cy="130" r="105" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none" />
+              <circle cx="220" cy="130" r="70" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none" />
+              <line x1="110" y1="130" x2="330" y2="130" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+              <line x1="220" y1="20" x2="220" y2="240" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+
+              <!-- Central Precision Cross -->
+              <line x1="216" y1="130" x2="224" y2="130" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+              <line x1="220" y1="126" x2="220" y2="134" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+
+              <!-- Diamond connecting paths -->
+              <path class="stroke-draw" d="M 220 50 L 345 130" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <path class="stroke-draw" d="M 345 130 L 220 210" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <path class="stroke-draw" d="M 220 210 L 95 130" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <path class="stroke-draw" d="M 95 130 L 220 50" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+              <!-- Node 1: INIT (Top) -->
+              <circle cx="220" cy="50" r="16" fill="#141617" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+              <text x="220" y="54" text-anchor="middle" class="env-node-label">INIT</text>
+              <text x="220" y="26" text-anchor="middle" class="env-caption">$ atlas env init</text>
+
+              <!-- Node 2: DEVELOP (Right) -->
+              <circle cx="345" cy="130" r="16" fill="#141617" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+              <text x="345" y="134" text-anchor="middle" class="env-node-label" style="font-size:9.5px;">DEVELOP</text>
+              <text x="345" y="162" text-anchor="middle" class="env-caption">$ uv pip install -e .</text>
+
+              <!-- Node 3: EVAL (Bottom) -->
+              <circle cx="220" cy="210" r="16" fill="#141617" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+              <text x="220" y="214" text-anchor="middle" class="env-node-label">EVAL</text>
+              <text x="220" y="240" text-anchor="middle" class="env-caption">$ uv run vf-eval</text>
+
+              <!-- Node 4: PUSH (Left) -->
+              <circle cx="95" cy="130" r="16" fill="#141617" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+              <text x="95" y="134" text-anchor="middle" class="env-node-label">PUSH</text>
+              <text x="95" y="162" text-anchor="middle" class="env-caption">$ atlas env push</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Copy RIGHT -->
+        <div class="card-content">
+          <h2 class="card-title"><em>RL</em> Environments</h2>
+          
+          <p class="card-paragraph">
+            Turn any task into an RL environment. Init, develop, eval, and push with the Atlas CLI. <span class="mono-bold-num">11.</span> Built on the open-source Verifiers library. <span class="mono-bold-num">12.</span> One CLI loop: init, develop, eval, push. <span class="mono-bold-num">13.</span> 2,500+ community environments on the Hub
+          </p>
+
+          <div class="card-action-wrap">
+            <a href="#env" class="pill-btn pill-btn-white">
+              CREATE ENVIRONMENTS →
+            </a>
+          </div>
+        </div>
+
+      </article>
+
+      <!-- =====================================================================
+           CARD 2: Evaluations (Side by side with Training)
+           ===================================================================== -->
+      <article class="card card-split anim-in" id="evaluations">
+        
+        <!-- Panel TOP -->
+        <div class="card-panel">
+          <div class="panel-highlight"></div>
+          <div class="panel-grid-lines"></div>
+
+          <div class="eval-box">
+            <div class="eval-picker-row">
+              <span style="font-weight:600;">atlas-cognition/logic-env</span>
+              <span style="color:rgba(255,255,255,0.45); font-size:10px;">0.2.21</span>
+              <span style="color:rgba(255,255,255,0.35); font-size:9.5px; letter-spacing:0.04em;">ATLAS COGNITION</span>
+            </div>
+
+            <div class="eval-pill-bar">
+              EVALUATE →
+            </div>
+
+            <div class="eval-faint-row">
+              <span>orbit-ai/lifeval</span>
+              <span>GSM8K: 94.2%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copy BOTTOM -->
+        <div class="card-content">
+          <h2 class="card-title">Evaluations</h2>
+          
+          <p class="card-paragraph">
+            Hosted evaluations for you to benchmark the performance of your models. <span class="mono-bold-num">21.</span> Automated benchmarks across reasoning, coding, and tool use. <span class="mono-bold-num">22.</span> Custom evaluation suites with verifiable reward rubrics. <span class="mono-bold-num">23.</span> Side-by-side model diffs and regression tracking.
+          </p>
+
+          <div class="card-action-wrap">
+            <a href="#eval" class="pill-btn pill-btn-white">
+              RUN YOUR FIRST EVAL →
+            </a>
+          </div>
+        </div>
+
+      </article>
+
+      <!-- =====================================================================
+           CARD 3: Hosted Training (Side by side with Evaluations)
+           ===================================================================== -->
+      <article class="card card-split anim-in" id="training">
+        
+        <!-- Panel TOP: Reward chart -->
+        <div class="card-panel">
+          <div class="panel-highlight"></div>
+          <div class="panel-grid-lines"></div>
+
+          <div class="training-box">
+            <div class="training-header-labels">
+              <span>Reward</span>
+              <span>0.92</span>
+            </div>
+
+            <svg class="training-chart-svg" viewBox="0 0 370 140" fill="none">
+              <!-- Grid lines -->
+              <line x1="10" y1="125" x2="360" y2="125" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+              <line x1="10" y1="80" x2="360" y2="80" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="2 3"/>
+              <line x1="10" y1="35" x2="360" y2="35" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="2 3"/>
+
+              <!-- Jagged white reward curve rising to 0.92 plateau -->
+              <path class="stroke-draw" 
+                d="M 15 120 
+                   L 30 115 L 42 118 L 56 106 L 70 109 L 88 95 L 104 98 L 122 84 
+                   L 138 82 L 158 72 L 176 74 L 194 60 L 212 62 L 232 48 L 250 51 
+                   L 268 38 L 288 40 L 308 34 L 328 35 L 345 32 L 360 30" 
+                stroke="#FFFFFF" 
+                stroke-width="1.8" 
+                stroke-linecap="round" 
+                stroke-linejoin="round"/>
+
+              <!-- Active point at end -->
+              <circle cx="360" cy="30" r="3.5" fill="#FFFFFF"/>
+            </svg>
+
+            <div class="training-bottom-labels">
+              <span>0</span>
+              <span>max steps 10 000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copy BOTTOM -->
+        <div class="card-content">
+          <h2 class="card-title">Hosted Training</h2>
+          
+          <p class="card-paragraph">
+            Train large-scale models optimized for agentic workflows. <span class="mono-bold-num">31.</span> Train on 2,500+ RL environments. <span class="mono-bold-num">32.</span> Managed training workflows with full visibility and control. <span class="mono-bold-num">33.</span> Hands on support from our applied research team.
+          </p>
+
+          <div class="card-action-wrap">
+            <a href="#train" class="pill-btn pill-btn-white">
+              START TRAINING →
+            </a>
+          </div>
+        </div>
+
+      </article>
+
+      <!-- =====================================================================
+           CARD 4: Inference (Full-width row, MIRRORED: copy LEFT, panel RIGHT)
+           ===================================================================== -->
+      <article class="card card-full-width card-inference anim-in" id="inference">
+        
+        <!-- Copy LEFT -->
+        <div class="card-content">
+          <h2 class="card-title">Inference</h2>
+          
+          <p class="card-paragraph">
+            Dedicated or serverless inference for your custom models, with native LoRA support. <span class="mono-bold-num">41.</span> Sub-10ms time-to-first-token on dedicated clusters. <span class="mono-bold-num">42.</span> Dynamic LoRA adapter hot-swapping at runtime. <span class="mono-bold-num">43.</span> Global edge routing with 99.99% availability SLAs.
+          </p>
+
+          <div class="card-action-wrap">
+            <a href="#call" class="pill-btn pill-btn-white">
+              BOOK A CALL →
+            </a>
+          </div>
+        </div>
+
+        <!-- Panel RIGHT (Mirrored): Inset stacked deployment clusters -->
+        <div class="card-panel">
+          <div class="panel-highlight"></div>
+          <div class="panel-grid-lines"></div>
+
+          <div class="inference-box">
+            <!-- Row 1 -->
+            <div class="inf-row">
+              <div class="inf-left">
+                <div class="inf-name">
+                  <span>cluster-us-east-1</span>
+                  <span class="inf-badge">LoRA: AGENT-CODE-V4</span>
+                </div>
+                <div class="inf-desc">atlas-70b-reasoner // Active Base</div>
+              </div>
+              <div class="inf-right">
+                <span class="inf-latency">8.2ms</span>
+                <span class="inf-status">HEALTHY</span>
+              </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="inf-row">
+              <div class="inf-left">
+                <div class="inf-name">
+                  <span>cluster-eu-west-1</span>
+                  <span class="inf-badge">LoRA: MATH-VERIFIER</span>
+                </div>
+                <div class="inf-desc">atlas-8b-fast // Active Base</div>
+              </div>
+              <div class="inf-right">
+                <span class="inf-latency">4.1ms</span>
+                <span class="inf-status">HEALTHY</span>
+              </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="inf-row">
+              <div class="inf-left">
+                <div class="inf-name">
+                  <span>cluster-ap-south-1</span>
+                  <span class="inf-badge">LoRA: COT-PLANNER</span>
+                </div>
+                <div class="inf-desc">atlas-70b-reasoner // Hot Standby</div>
+              </div>
+              <div class="inf-right">
+                <span class="inf-latency">9.4ms</span>
+                <span class="inf-status">HEALTHY</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </article>
+
+    </div>
+  </main>
+
+  <script>
+    (function initAnimations() {
+      const items = document.querySelectorAll('.anim-in');
+      const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '100px' });
+
+      items.forEach(el => observer.observe(el));
+    })();
+  </script>
+</body>
+</html>
