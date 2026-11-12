@@ -56,3 +56,7 @@ Thumbs.db
 *.sublime-workspace
 *.swp
 *~
+
+# Temporary Video Assembly Buffers
+submission_assets/temp_audio/
+submission_assets/temp_video_bases/
