@@ -1,0 +1,12 @@
+{
+  "name": "paybridge-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PayBridge AI — Financial Truth & Reconciliation Platform",
+  "scripts": {
+    "deploy": "node scripts/deploy_render.cjs",
+    "deploy:render": "node scripts/deploy_render.cjs",
+    "build:frontend": "cd apps/web && npm install && npm run build",
+    "build:backend": "cd services/api && go build -o bin/api ./cmd/api"
+  }
+}
