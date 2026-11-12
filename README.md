@@ -1,5 +1,13 @@
 # PayBridge AI — Master Specification & Implementation Manifest
 
+> **Live Hosted Production Application (Render):**  
+> 🌐 **Frontend Application:** [https://paybridge-web-app.onrender.com](https://paybridge-web-app.onrender.com)  
+> ⚙️ **Backend REST API:** [https://paybridge-api-service.onrender.com](https://paybridge-api-service.onrender.com)  
+> 🗄️ **PostgreSQL 16 Database:** Render Oregon (Schema Migrations 0001–0011 Active)  
+> 📦 **GitHub Repository:** [https://github.com/DinnyNavis/paypal.git](https://github.com/DinnyNavis/paypal.git)  
+> 🎥 **Demonstration Video (3-Min Narration):** [`submission_assets/project_demo_3min.mp4`](file:///d:/paypal-ai-main/paypal-ai-main/submission_assets/project_demo_3min.mp4)  
+> 📸 **15-Screenshot Production Gallery:** [`submission_assets/image_gallery_15/`](file:///d:/paypal-ai-main/paypal-ai-main/submission_assets/image_gallery_15)
+
 | Metric | Specification Status |
 |---|---|
 | **Version** | `2.0.0-ENTERPRISE` (Complete Institutional Production Suite) |
