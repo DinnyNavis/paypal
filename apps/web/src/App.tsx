@@ -23,10 +23,33 @@ import {
 } from './features/screens/Screens';
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<string>('landing');
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const getInitialTab = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || window.location.hash.replace('#', '') || 'landing';
+  };
+  const [currentTab, setCurrentTab] = useState<string>(getInitialTab);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('case') || null;
+  });
   const [isSimulated, setIsSimulated] = useState<boolean>(api.isSimulationMode());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab') || window.location.hash.replace('#', '');
+      if (tab) setCurrentTab(tab);
+      const c = params.get('case');
+      if (c) setSelectedCaseId(c);
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
 
   useEffect(() => {
     api.checkBackendLiveness().then((live) => {
