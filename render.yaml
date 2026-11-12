@@ -38,11 +38,11 @@ services:
       - key: PAYPAL_API_BASE
         value: https://api-m.sandbox.paypal.com
       - key: PAYPAL_CLIENT_ID
-        sync: false
+        value: sandbox_paybridge_client_id_demo
       - key: PAYPAL_CLIENT_SECRET
-        sync: false
+        value: sandbox_paybridge_client_secret_demo
       - key: APP_ENV
-        value: production
+        value: development
       - key: ALLOW_DEV_AUTH
         value: "true"
 
