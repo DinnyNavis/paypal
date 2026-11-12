@@ -14,7 +14,7 @@ DECLARE
         'case_participants', 'payment_attempts', 'provider_resources',
         'idempotency_keys', 'case_snapshots', 'evidence_items',
         'evidence_payloads', 'evidence_edges', 'payment_events',
-        'dead_letters', 'investigations', 'agent_runs',
+        'dead_letters', 'investigations',
         'diagnosis_claims', 'recovery_actions', 'action_acks',
         'passport_versions', 'invitations', 'consent_grants',
         'passport_shares', 'notifications', 'audit_chain_heads',
@@ -44,6 +44,17 @@ CREATE POLICY claim_evidence_isolation ON public.claim_evidence FOR ALL TO PUBLI
         SELECT 1 FROM public.diagnosis_claims c
         WHERE c.id = claim_evidence.claim_id
           AND c.tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
+    ));
+
+-- RLS Policy on agent_runs (linked via investigations.tenant_id)
+ALTER TABLE public.agent_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_runs FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS agent_runs_isolation ON public.agent_runs;
+CREATE POLICY agent_runs_isolation ON public.agent_runs FOR ALL TO PUBLIC
+    USING (EXISTS (
+        SELECT 1 FROM public.investigations inv
+        WHERE inv.id = agent_runs.investigation_id
+          AND inv.tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
     ));
 
 -- Role-Specific RLS on outbox:

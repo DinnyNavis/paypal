@@ -10,3 +10,4 @@
     "build:backend": "cd services/api && go build -o bin/api ./cmd/api"
   }
 }
+

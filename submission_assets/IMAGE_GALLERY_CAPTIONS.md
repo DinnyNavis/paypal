@@ -39,3 +39,4 @@ Every screenshot in this gallery is captured directly from the live, running Pay
 
 ### Image 12: `12_operations_double_entry_ledger.png`
 **Caption:** **Operations Registry & Double-Entry Ledger.** Institutional transaction journal enforcing zero-sum financial invariants across multi-rail settlement accounts, with immutable append-only audit tracking.
+

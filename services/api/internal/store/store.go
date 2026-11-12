@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/url"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 // Common database errors

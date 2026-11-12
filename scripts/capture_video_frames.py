@@ -43,3 +43,4 @@ for fname, url in TARGETS:
         print(f"Failed {fname}")
 
 print("Base frames capture complete.")
+

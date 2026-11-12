@@ -127,3 +127,4 @@
 - [x] PayPal transactions explicitly designated as **Sandbox**.
 - [x] Zero API keys, credentials, or private secrets exposed in narration or video frames.
 - [x] Video duration strictly under 3 minutes (02:57 target).
+

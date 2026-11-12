@@ -129,3 +129,4 @@ The video follows the 9 editorial sections of `PITCH_SCRIPT_20_SECOND_SEGMENTS.m
 2. **Submit Form:**
    - Copy the YouTube video URL and the GitHub repo URL (`https://github.com/DinnyNavis/paypal.git`) into your hackathon submission portal.
    - Upload the 12 screenshots from `submission_assets/image_gallery/` along with their captions from `IMAGE_GALLERY_CAPTIONS.md`.
+

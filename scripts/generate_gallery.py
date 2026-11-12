@@ -52,3 +52,4 @@ for filename, url in TARGETS:
         print(f" -> FAILED to capture {filename}")
 
 print("\nGallery capture process finished.")
+
